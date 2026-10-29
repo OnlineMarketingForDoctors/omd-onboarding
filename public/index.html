@@ -224,9 +224,10 @@
       renderResults([], 'Searching…');
       try {
         const { contacts } = await api(`/api/search?q=${encodeURIComponent(term)}`);
-        if (mine === seq) renderResults(contacts, 'No contacts found.');
+        if (mine === seq) { banner(''); renderResults(contacts, 'No contacts found.'); }
       } catch (err) {
-        if (mine === seq) renderResults([], err.message);
+        // The banner keeps the error visible after the dropdown closes on blur.
+        if (mine === seq) { banner(`Search failed: ${err.message}`); renderResults([], 'Search failed — see the message above.'); }
       }
     }, 300);
   });
