@@ -267,6 +267,21 @@
 
   const isEmpty = (v) => (Array.isArray(v) ? v.length === 0 : String(v ?? '').trim() === '');
 
+  // ISO 3166 alpha-2 codes with display names, which is what GHL stores for country.
+  let countryList;
+  function countries() {
+    if (countryList) return countryList;
+    const names = new Intl.DisplayNames(['en'], { type: 'region' });
+    const A = 65, list = [];
+    for (let i = 0; i < 26; i++) for (let j = 0; j < 26; j++) {
+      const code = String.fromCharCode(A + i, A + j);
+      let name;
+      try { name = names.of(code); } catch { continue; }
+      if (name && name !== code && !['EU', 'EZ', 'UN', 'QO', 'XA', 'XB', 'ZZ'].includes(code)) list.push([code, name]);
+    }
+    return (countryList = list.sort((a, b) => a[1].localeCompare(b[1])));
+  }
+
   function control(f, value) {
     const id = `f-${f.key}`;
     const common = { id, name: f.key, required: f.required };
@@ -277,6 +292,14 @@
         const s = el('select', common, el('option', { value: '', textContent: 'Choose…' }),
           ...f.options.map((o) => el('option', { value: o, textContent: o })));
         s.value = f.options.includes(value) ? value : '';
+        return s;
+      }
+      case 'country': {
+        const s = el('select', common, el('option', { value: '', textContent: 'Choose…' }),
+          ...countries().map(([code, name]) => el('option', { value: code, textContent: name })));
+        s.value = value;
+        // Keep a code GHL holds that this browser has no name for.
+        if (value && s.value !== value) { s.append(el('option', { value, textContent: value })); s.value = value; }
         return s;
       }
       case 'radio':

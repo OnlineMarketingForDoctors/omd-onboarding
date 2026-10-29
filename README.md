@@ -47,8 +47,9 @@ and copy its id from the URL (`.../workflow/<id>`). Make sure it is **Published*
 
 ### 3. Fields
 
-Edit `FIELDS` in `form.config.js` to match the GHL form
-`Kjw0PFbJkD8juTSV0IKH`. Use field keys:
+`FIELDS` in `form.config.js` already matches the GHL form
+`Kjw0PFbJkD8juTSV0IKH` ("Onboarding New Client"). If the form changes, update it
+with field keys:
 
 - Standard fields: `first_name`, `last_name`, `email`, `phone`, `company_name`,
   `website`, `address1`, `city`, `state`, `postal_code`, `country`, `date_of_birth`.
@@ -56,7 +57,7 @@ Edit `FIELDS` in `form.config.js` to match the GHL form
   Label, type and dropdown or checkbox options are read from GHL, so they stay in step
   when the field is edited there.
 
-`npm run extract-fields` tries to list the form's fields and keys for you.
+`npm run extract-fields` lists the form's current fields and keys, ready to paste.
 
 Supported custom field types: text, large text, number, monetary, phone, email,
 date, dropdown, radio, multi-select and checkbox. File upload and other types

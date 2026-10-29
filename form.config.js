@@ -1,29 +1,37 @@
 // The fields shown once a contact is selected, in display order.
 //
-// Mirror the fields of the GHL form
-// https://api.leadconnectorhq.com/widget/form/Kjw0PFbJkD8juTSV0IKH here.
+// These mirror the GHL form "Onboarding New Client"
+// https://api.leadconnectorhq.com/widget/form/Kjw0PFbJkD8juTSV0IKH
 // Run `npm run extract-fields` to list that form's fields and their keys.
 //
 // Each entry is either a field key or an object with overrides:
 //   'email'                                  a standard contact field
-//   'contact.practice_name'                  a custom field, by its GHL key
+//   'contact.clinic_name'                    a custom field, by its GHL key
 //   { key: 'contact.notes', label: 'Notes', required: false }
 //
-// Custom fields take their label, type and options from GHL, so only the key
-// is needed. Every field is required unless it says `required: false`.
+// Custom fields take their type and options from GHL, so only the key is
+// needed. Every field is required unless it says `required: false`.
 
 export const FORM_ID = 'Kjw0PFbJkD8juTSV0IKH';
 
 export const FIELDS = [
-  'first_name',
-  'last_name',
+  // General info
+  { key: 'first_name', label: 'First Name' },
+  { key: 'last_name', label: 'Last Name' },
   'email',
   'phone',
-  'company_name',
-  'website',
-  'address1',
+  { key: 'contact.clinic_name', label: 'Business Name' },
+  { key: 'contact.clinic_type', label: 'Clinic Type' },
+  // Address
+  { key: 'address1', label: 'Street Address' },
   'city',
   'state',
-  'postal_code',
   'country',
+  { key: 'postal_code', label: 'Post/ZIP Code' },
+  // Contract details
+  { key: 'contact.package_type', label: 'Package Type' },
+  { key: 'contact.contract_value', label: 'Contract Value' },
+  { key: 'contact.contract_link', label: 'Contract Link' },
+  { key: 'contact.contract_length', label: 'Contract Length' },
+  { key: 'contact.account_manager', label: 'Account Manager' },
 ];

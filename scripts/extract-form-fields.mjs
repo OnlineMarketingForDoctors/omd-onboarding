@@ -1,35 +1,59 @@
 // Lists the fields of the public GHL form, to help fill in form.config.js.
 // Usage: npm run extract-fields [formId]
 //
-// GHL does not publish a form-definition API, so this reads the field data
-// embedded in the form's widget page. Check the output against the form.
+// GHL does not publish a form-definition API, so this reads the form data the
+// widget page embeds as a Nuxt payload (a flat array where objects refer to
+// their values by index). Check the output against the form.
 
 import { FORM_ID } from '../form.config.js';
 
 const formId = process.argv[2] || FORM_ID;
 const res = await fetch(`https://api.leadconnectorhq.com/widget/form/${formId}`);
 if (!res.ok) throw new Error(`Could not load the form (${res.status}).`);
-const html = (await res.text()).replace(/\\u002F/g, '/').replace(/\\"/g, '"');
+const html = await res.text();
 
-const seen = new Set();
-const rows = [];
-// Field definitions carry a label next to a tag or fieldKey, e.g.
-// {"label":"Practice name","tag":"practice_name",...,"fieldKey":"contact.practice_name"}
-for (const m of html.matchAll(/\{[^{}]*?"label"\s*:\s*"([^"]*)"[^{}]*?\}/g)) {
-  const obj = m[0];
-  const key = obj.match(/"fieldKey"\s*:\s*"([^"]+)"/)?.[1] || obj.match(/"tag"\s*:\s*"([^"]+)"/)?.[1];
-  if (!key || seen.has(key)) continue;
-  seen.add(key);
-  const required = /"required"\s*:\s*true/.test(obj);
-  const type = obj.match(/"(?:type|dataType)"\s*:\s*"([^"]+)"/)?.[1] || '';
-  rows.push({ label: m[1], key, type, required });
+const payload = html.match(/<script[^>]*id="__NUXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+if (!payload) throw new Error('The widget page has no Nuxt payload; GHL may have changed the page.');
+const table = JSON.parse(payload[1]);
+
+const WRAPPERS = new Set(['Reactive', 'ShallowReactive', 'Ref', 'ShallowRef', 'EmptyRef']);
+const memo = new Map();
+function hydrate(i) {
+  if (typeof i !== 'number' || i < 0) return undefined;
+  if (memo.has(i)) return memo.get(i);
+  const v = table[i];
+  if (Array.isArray(v) && WRAPPERS.has(v[0])) {
+    const out = hydrate(v[1]);
+    memo.set(i, out);
+    return out;
+  }
+  if (v && typeof v === 'object') {
+    const out = Array.isArray(v) ? [] : {};
+    memo.set(i, out);
+    for (const [k, x] of Object.entries(v)) out[k] = hydrate(x);
+    return out;
+  }
+  memo.set(i, v);
+  return v;
 }
 
-if (!rows.length) {
-  console.log('No field definitions found in the widget page. Open the form in GHL (Sites > Forms > Builder)');
-  console.log('and copy each field\'s key from its settings, or from Settings > Custom Fields.');
-} else {
-  console.table(rows);
-  console.log('\nPaste into FIELDS in form.config.js:\n');
-  console.log(rows.map((r) => `  '${r.key}',`).join('\n'));
-}
+const fields = hydrate(0)?.data?.formData?.formPayload?.form?.fields;
+if (!Array.isArray(fields)) throw new Error('No form fields found in the payload.');
+
+// Layout elements (headings, images, the address group wrapper, captcha, button) are not inputs.
+const SKIP = new Set(['header', 'image', 'group_address', 'captcha', 'button']);
+// Form builder tags whose contact field key differs.
+const STANDARD_KEYS = { address: 'address1', organization: 'company_name' };
+
+const rows = fields
+  .filter((f) => !SKIP.has(f.tag) && !f.hidden)
+  .map((f) => ({
+    label: f.label,
+    key: f.standard ? STANDARD_KEYS[f.tag] || f.tag : f.fieldKey,
+    type: f.dataType || f.type,
+    required: !!f.required,
+  }));
+
+console.table(rows);
+console.log('\nPaste into FIELDS in form.config.js:\n');
+console.log(rows.map((r) => `  { key: '${r.key}', label: ${JSON.stringify(r.label)} },`).join('\n'));
