@@ -22,7 +22,7 @@ never reaches the browser.
 | `api/contact.js` | `GET /api/contact?id=` returns fields and current values. `POST` validates, updates the contact and starts the workflow. |
 | `lib/ghl.js` | GHL API v2 client. |
 | `lib/fields.js` | Maps the config to field definitions, reads values, validates, builds the update. |
-| `lib/http.js` | Password check and error handling shared by the routes. |
+| `lib/http.js` | Method check and error handling shared by the routes. |
 | `scripts/dev-server.mjs` | Runs the page and API locally without the Vercel CLI. |
 | `scripts/extract-form-fields.mjs` | Lists the fields of the GHL form, to help fill in `form.config.js`. |
 
@@ -72,7 +72,6 @@ See `.env.example`:
 | `GHL_TOKEN` | The private integration token. |
 | `GHL_LOCATION_ID` | The sub-account id (Settings → Business Profile, or the `location/<id>` part of the URL). |
 | `GHL_WORKFLOW_ID` | The workflow to start. |
-| `ACCESS_PASSWORD` | A shared password for the team. The page asks for it once per browser tab. |
 
 ## Run locally
 
@@ -84,7 +83,7 @@ npm run dev            # http://localhost:3000
 ## Deploy to Vercel
 
 Import the repository as a new project (framework preset **Other**, no build
-command), add the four environment variables, and deploy. `vercel.json` serves
+command), add the three environment variables, and deploy. `vercel.json` serves
 `public/` and the `api/` folder becomes the functions.
 
 ## Behaviour notes

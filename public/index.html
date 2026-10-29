@@ -41,7 +41,7 @@
   label.field-label { display: block; font-weight: 600; margin-bottom: 6px; }
   .req { color: var(--danger); margin-left: 2px; }
   input[type=text], input[type=search], input[type=email], input[type=tel], input[type=url],
-  input[type=number], input[type=date], input[type=password], select, textarea {
+  input[type=number], input[type=date], select, textarea {
     width: 100%;
     font: inherit;
     padding: 10px 12px;
@@ -158,27 +158,11 @@
   };
 
   // ---- API ----------------------------------------------------------------
-  const KEY = 'onboarding-access-key';
-  const getKey = () => { try { return sessionStorage.getItem(KEY) || ''; } catch { return ''; } };
-  const setKey = (v) => { try { sessionStorage.setItem(KEY, v); } catch {} };
-
   async function api(path, options = {}) {
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const res = await fetch(path, {
-        ...options,
-        headers: { 'Content-Type': 'application/json', 'x-access-key': getKey() },
-      });
-      if (res.status === 401) {
-        const pw = prompt(attempt ? 'Wrong password. Try again:' : 'Team password:');
-        if (pw === null) throw new Error('A password is needed to use this tool.');
-        setKey(pw);
-        continue;
-      }
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { data, status: res.status });
-      return data;
-    }
-    throw new Error('Wrong password.');
+    const res = await fetch(path, { ...options, headers: { 'Content-Type': 'application/json' } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { data, status: res.status });
+    return data;
   }
 
   function banner(message, kind = 'error-banner') {
