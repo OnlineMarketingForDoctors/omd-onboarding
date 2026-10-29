@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Client Onboarding</title>
+<style>
+  :root {
+    --ink: #1f1f1f;
+    --muted: #6b6760;
+    --line: #e4dfd5;
+    --ground: #f7f5f0;
+    --card: #ffffff;
+    --gold: #b98e35;
+    --gold-soft: #f6ecd6;
+    --danger: #b3261e;
+    --danger-soft: #fbeceb;
+    --ok: #2f6b3a;
+    --ok-soft: #e8f3ea;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 40px 16px 80px; }
+  h1 { font-size: 26px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .lede { color: var(--muted); margin: 0 0 28px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .step { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); margin: 0 0 10px; }
+  label.field-label { display: block; font-weight: 600; margin-bottom: 6px; }
+  .req { color: var(--danger); margin-left: 2px; }
+  input[type=text], input[type=search], input[type=email], input[type=tel], input[type=url],
+  input[type=number], input[type=date], input[type=password], select, textarea {
+    width: 100%;
+    font: inherit;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: inherit;
+  }
+  textarea { min-height: 96px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outline-offset: -1px; border-color: var(--gold); }
+
+  /* Search */
+  .search { position: relative; }
+  .results {
+    list-style: none; margin: 6px 0 0; padding: 4px;
+    position: absolute; left: 0; right: 0; z-index: 5;
+    background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    max-height: 340px; overflow-y: auto;
+  }
+  .results li { padding: 9px 10px; border-radius: 6px; cursor: pointer; }
+  .results li[aria-selected=true], .results li:hover { background: var(--gold-soft); }
+  .results .name { font-weight: 600; }
+  .results .meta { color: var(--muted); font-size: 13px; }
+  .results .empty { cursor: default; color: var(--muted); }
+  .results .empty:hover { background: none; }
+
+  .selected { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .selected .name { font-weight: 600; font-size: 17px; }
+  .selected .meta { color: var(--muted); font-size: 13px; }
+
+  /* Form */
+  .summary { padding: 10px 12px; border-radius: 8px; background: var(--gold-soft); margin-bottom: 20px; font-size: 14px; }
+  .summary.done { background: var(--ok-soft); color: var(--ok); }
+  .field { margin-bottom: 18px; }
+  .field.missing > label.field-label::after {
+    content: "Missing"; margin-left: 8px; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em; color: var(--gold);
+    background: var(--gold-soft); padding: 2px 6px; border-radius: 4px; vertical-align: 1px;
+  }
+  .field.invalid input, .field.invalid select, .field.invalid textarea, .field.invalid .choices { border-color: var(--danger); }
+  .choices { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
+  .choices label { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-weight: 400; }
+  .error { color: var(--danger); font-size: 13px; margin-top: 4px; }
+  .note { color: var(--muted); font-size: 13px; }
+
+  .actions { display: flex; gap: 10px; align-items: center; margin-top: 8px; }
+  button {
+    font: inherit; font-weight: 600; cursor: pointer;
+    padding: 10px 18px; border-radius: 8px; border: 1px solid var(--ink);
+    background: var(--ink); color: #fff;
+  }
+  button.secondary { background: #fff; color: var(--ink); border-color: var(--line); }
+  button:disabled { opacity: .55; cursor: progress; }
+  .banner { padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; }
+  .banner.error-banner { background: var(--danger-soft); color: var(--danger); }
+  .banner.ok { background: var(--ok-soft); color: var(--ok); }
+  [hidden] { display: none !important; }
+  @media (max-width: 520px) {
+    .card { padding: 18px; }
+    .selected { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Client onboarding</h1>
+  <p class="lede">Find the contact, complete their details, and submit to update GHL and start the onboarding workflow.</p>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <section class="card" id="search-card">
+    <p class="step">1 · Contact</p>
+    <div class="search" id="search-box">
+      <label class="field-label" for="q">Search by name, email or phone</label>
+      <input id="q" type="search" autocomplete="off" placeholder="e.g. Jane Smith or jane@clinic.com"
+             role="combobox" aria-expanded="false" aria-controls="results" aria-autocomplete="list">
+      <ul id="results" class="results" role="listbox" hidden></ul>
+    </div>
+    <div class="selected" id="selected" hidden>
+      <div>
+        <div class="name" id="sel-name"></div>
+        <div class="meta" id="sel-meta"></div>
+      </div>
+      <button type="button" class="secondary" id="change">Change contact</button>
+    </div>
+  </section>
+
+  <section class="card" id="form-card" hidden>
+    <p class="step">2 · Details</p>
+    <div class="summary" id="summary"></div>
+    <form id="form" novalidate>
+      <div id="fields"></div>
+      <div class="actions">
+        <button type="submit" id="submit">Update contact &amp; start workflow</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card" id="done-card" hidden>
+    <p class="step">Done</p>
+    <p id="done-text"></p>
+    <button type="button" id="again">Onboard another contact</button>
+  </section>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, props = {}, ...children) => {
+    const node = Object.assign(document.createElement(tag), props);
+    for (const c of children) if (c != null) node.append(c);
+    return node;
+  };
+
+  // ---- API ----------------------------------------------------------------
+  const KEY = 'onboarding-access-key';
+  const getKey = () => { try { return sessionStorage.getItem(KEY) || ''; } catch { return ''; } };
+  const setKey = (v) => { try { sessionStorage.setItem(KEY, v); } catch {} };
+
+  async function api(path, options = {}) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const res = await fetch(path, {
+        ...options,
+        headers: { 'Content-Type': 'application/json', 'x-access-key': getKey() },
+      });
+      if (res.status === 401) {
+        const pw = prompt(attempt ? 'Wrong password. Try again:' : 'Team password:');
+        if (pw === null) throw new Error('A password is needed to use this tool.');
+        setKey(pw);
+        continue;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw Object.assign(new Error(data.error || `Request failed (${res.status})`), { data, status: res.status });
+      return data;
+    }
+    throw new Error('Wrong password.');
+  }
+
+  function banner(message, kind = 'error-banner') {
+    const b = $('banner');
+    b.className = `banner ${kind}`;
+    b.textContent = message || '';
+    b.hidden = !message;
+  }
+
+  // ---- Search -------------------------------------------------------------
+  const q = $('q'), results = $('results');
+  let timer, seq = 0, items = [], active = -1;
+
+  function closeResults() { results.hidden = true; q.setAttribute('aria-expanded', 'false'); active = -1; }
+
+  function renderResults(list, emptyText) {
+    items = list;
+    active = list.length ? 0 : -1;
+    results.replaceChildren(
+      ...(list.length
+        ? list.map((c, i) => el('li', { role: 'option', id: `opt-${i}`, onmousedown: (e) => { e.preventDefault(); choose(c); } },
+            el('div', { className: 'name', textContent: c.name }),
+            el('div', { className: 'meta', textContent: [c.email, c.phone, c.company].filter(Boolean).join(' · ') })))
+        : [el('li', { className: 'empty', textContent: emptyText })])
+    );
+    highlight();
+    results.hidden = false;
+    q.setAttribute('aria-expanded', 'true');
+  }
+
+  function highlight() {
+    [...results.children].forEach((li, i) => li.setAttribute('aria-selected', String(i === active)));
+    if (active >= 0) { q.setAttribute('aria-activedescendant', `opt-${active}`); results.children[active]?.scrollIntoView({ block: 'nearest' }); }
+    else q.removeAttribute('aria-activedescendant');
+  }
+
+  q.addEventListener('input', () => {
+    clearTimeout(timer);
+    const term = q.value.trim();
+    if (term.length < 2) return closeResults();
+    timer = setTimeout(async () => {
+      const mine = ++seq;
+      renderResults([], 'Searching…');
+      try {
+        const { contacts } = await api(`/api/search?q=${encodeURIComponent(term)}`);
+        if (mine === seq) renderResults(contacts, 'No contacts found.');
+      } catch (err) {
+        if (mine === seq) renderResults([], err.message);
+      }
+    }, 300);
+  });
+
+  q.addEventListener('keydown', (e) => {
+    if (results.hidden || !items.length) return;
+    if (e.key === 'ArrowDown') { active = (active + 1) % items.length; highlight(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { active = (active - 1 + items.length) % items.length; highlight(); e.preventDefault(); }
+    else if (e.key === 'Enter' && active >= 0) { choose(items[active]); e.preventDefault(); }
+    else if (e.key === 'Escape') closeResults();
+  });
+  q.addEventListener('blur', () => setTimeout(closeResults, 100));
+
+  // ---- Selected contact & form ------------------------------------------
+  let fields = [], contactId = null;
+
+  async function choose(c) {
+    closeResults();
+    banner('');
+    $('sel-name').textContent = c.name;
+    $('sel-meta').textContent = [c.email, c.phone].filter(Boolean).join(' · ');
+    $('search-box').hidden = true;
+    $('selected').hidden = false;
+    $('form-card').hidden = false;
+    $('fields').replaceChildren(el('p', { className: 'note', textContent: 'Loading details…' }));
+    $('summary').hidden = true;
+    contactId = c.id;
+    try {
+      const data = await api(`/api/contact?id=${encodeURIComponent(c.id)}`);
+      if (contactId !== c.id) return;
+      fields = data.fields;
+      renderForm(data.values);
+    } catch (err) {
+      $('fields').replaceChildren();
+      banner(err.message);
+    }
+  }
+
+  const isEmpty = (v) => (Array.isArray(v) ? v.length === 0 : String(v ?? '').trim() === '');
+
+  function control(f, value) {
+    const id = `f-${f.key}`;
+    const common = { id, name: f.key, required: f.required };
+    switch (f.type) {
+      case 'textarea':
+        return el('textarea', { ...common, value, placeholder: f.placeholder || '' });
+      case 'select': {
+        const s = el('select', common, el('option', { value: '', textContent: 'Choose…' }),
+          ...f.options.map((o) => el('option', { value: o, textContent: o })));
+        s.value = f.options.includes(value) ? value : '';
+        return s;
+      }
+      case 'radio':
+      case 'multi': {
+        const type = f.type === 'radio' ? 'radio' : 'checkbox';
+        const chosen = Array.isArray(value) ? value : [value];
+        return el('div', { className: 'choices', id, role: type === 'radio' ? 'radiogroup' : 'group' },
+          ...f.options.map((o) => el('label', {},
+            el('input', { type, name: f.key, value: o, checked: chosen.includes(o) }), o)));
+      }
+      case 'unsupported':
+        return el('p', { className: 'note', textContent: `${value || 'Empty'} — this field type (${f.dataType}) has to be edited in GHL.` });
+      default:
+        return el('input', { ...common, type: f.type, value, placeholder: f.placeholder || '', step: f.type === 'number' ? 'any' : undefined });
+    }
+  }
+
+  function renderForm(values) {
+    $('fields').replaceChildren(...fields.map((f) => {
+      const v = values[f.key];
+      const wrap = el('div', { className: 'field', id: `w-${f.key}` },
+        el('label', { className: 'field-label', htmlFor: `f-${f.key}` }, f.label, f.required ? el('span', { className: 'req', textContent: '*' }) : null),
+        control(f, v),
+        el('div', { className: 'error', id: `e-${f.key}`, hidden: true }));
+      wrap.classList.toggle('missing', f.required && isEmpty(v));
+      return wrap;
+    }));
+    updateSummary();
+  }
+
+  function readForm() {
+    const form = $('form');
+    const out = {};
+    for (const f of fields) {
+      if (f.type === 'multi') out[f.key] = [...form.querySelectorAll(`input[name="${CSS.escape(f.key)}"]:checked`)].map((i) => i.value);
+      else if (f.type === 'radio') out[f.key] = form.querySelector(`input[name="${CSS.escape(f.key)}"]:checked`)?.value || '';
+      else if (f.type !== 'unsupported') out[f.key] = form.elements[f.key]?.value ?? '';
+    }
+    return out;
+  }
+
+  function updateSummary() {
+    const values = readForm();
+    const required = fields.filter((f) => f.required);
+    const missing = required.filter((f) => isEmpty(values[f.key])).length;
+    const s = $('summary');
+    s.hidden = false;
+    s.classList.toggle('done', missing === 0);
+    s.textContent = missing
+      ? `${missing} of ${required.length} required field${missing === 1 ? '' : 's'} still to fill.`
+      : 'All required fields are filled. Check the details, then submit.';
+  }
+
+  function showErrors(errors) {
+    for (const f of fields) {
+      const msg = errors[f.key];
+      const e = $(`e-${f.key}`);
+      e.textContent = msg || '';
+      e.hidden = !msg;
+      $(`w-${f.key}`).classList.toggle('invalid', !!msg);
+    }
+    const first = fields.find((f) => errors[f.key]);
+    if (first) $(`w-${first.key}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  $('form').addEventListener('input', (e) => {
+    const name = e.target.name;
+    if (name) {
+      const values = readForm();
+      const wrap = $(`w-${name}`);
+      if (wrap && !isEmpty(values[name])) { wrap.classList.remove('invalid'); $(`e-${name}`).hidden = true; }
+    }
+    updateSummary();
+  });
+
+  $('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    banner('');
+    const values = readForm();
+    const errors = {};
+    for (const f of fields) if (f.required && isEmpty(values[f.key])) errors[f.key] = 'This field is required.';
+    showErrors(errors);
+    if (Object.keys(errors).length) return;
+
+    const btn = $('submit');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      const res = await api(`/api/contact?id=${encodeURIComponent(contactId)}`, { method: 'POST', body: JSON.stringify({ values }) });
+      $('form-card').hidden = true;
+      $('search-card').hidden = true;
+      $('done-card').hidden = false;
+      $('done-text').textContent = `${$('sel-name').textContent}: ${res.changed ? `${res.changed} field${res.changed === 1 ? '' : 's'} updated in GHL` : 'no field changes'}, and the onboarding workflow has been started.`;
+    } catch (err) {
+      if (err.data?.errors) showErrors(err.data.errors);
+      banner(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Update contact & start workflow';
+    }
+  });
+
+  function reset() {
+    contactId = null; fields = [];
+    banner('');
+    $('search-card').hidden = false;
+    $('search-box').hidden = false;
+    $('selected').hidden = true;
+    $('form-card').hidden = true;
+    $('done-card').hidden = true;
+    q.value = '';
+    q.focus();
+  }
+  $('change').addEventListener('click', reset);
+  $('again').addEventListener('click', reset);
+})();
+</script>
+</body>
+</html>

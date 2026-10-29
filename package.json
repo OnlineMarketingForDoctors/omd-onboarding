@@ -1,0 +1,11 @@
+{
+  "name": "omd-onboarding",
+  "private": true,
+  "type": "module",
+  "description": "Search a GHL contact, complete the onboarding form fields, write them back to GHL and start a workflow.",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "extract-fields": "node scripts/extract-form-fields.mjs"
+  }
+}
