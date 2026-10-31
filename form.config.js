@@ -32,6 +32,6 @@ export const FIELDS = [
   { key: 'contact.package_type', label: 'Package Type' },
   { key: 'contact.contract_value', label: 'Contract Value' },
   { key: 'contact.contract_link', label: 'Contract Link' },
-  { key: 'contact.contract_length', label: 'Contract Length' },
+  { key: 'contact.renewal_date', label: 'Renewal Date' },
   { key: 'contact.account_manager', label: 'Account Manager' },
 ];
